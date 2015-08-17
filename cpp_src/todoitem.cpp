@@ -1,5 +1,4 @@
 #include <string>
-#include <cppcms/json.h>
 #include <booster/log.h>
 
 
@@ -47,18 +46,20 @@ bool TodoItem::completed() const
   return m_completed;
 }
 
-
-void TodoItem::merge(const TodoItem &other)
+void TodoItem::patch_from_json(const cppcms::json::value& todo_json)
 {
-  m_title = other.title();
-  m_order = other.order();
-  m_completed = other.completed();
+  using cppcms::json::bad_value_cast;
+  try { m_title = todo_json.get<std::string>("title"); } catch(bad_value_cast b){ /* silently ignore title if non-existent */ }
+  try { m_order = todo_json.get<double>("order"); } catch(bad_value_cast b){ /* silently ignore order if non-existent */ }
+  try { m_completed = todo_json.get<bool>("completed"); } catch(bad_value_cast b){ /* silently ignore completed if non-existent */ }
 }
 
-void TodoItem::set_base_url(const std::string& base_url)
+bool TodoItem::save(session& sql, const std::string& base_url)
 {
-  m_base_url  = base_url;
+  m_base_url = base_url;
+  save(sql);
 }
+
 
 bool TodoItem::save(session& sql)
 {
@@ -101,7 +102,7 @@ static TodoItem from_row(cppdb::result &res, const std::string &base_url)
   return TodoItem(uid, title, order, completed, base_url); 
 }
 
-// DB stuff: 
+// --- DB related methods --- 
 
 TodoItem TodoItem::find_by_id(int uid, const std::string &base_url, session &sql) throw (std::string)
 {
@@ -150,6 +151,6 @@ void TodoItem::init_tables(session& sql)
                 "completed BOOL DEFAULT FALSE)" << cppdb::exec;
 }
 
-// END DB stuff
+// END --- DB related methods ---
 
 
