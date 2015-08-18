@@ -127,8 +127,8 @@ void todos::todos_noarg()
     }
     else if(request().request_method()=="DELETE") {
       TodoItem::delete_all(sql);
-      cppcms::json::value empty;
-      response().out() << empty;
+
+      response().out(); // empty []
     } 
 }
 
