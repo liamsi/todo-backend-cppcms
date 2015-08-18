@@ -5,11 +5,11 @@
          "socket" : "/tmp/todos-fastcgi-socket" 
     },
     "logging" : {
-      "level" : "debug",
+      "level" : "error", // change to debug (and use BOOSTER_DEBUG) if you need more output
     },
     "todo-backend" : {  
-      // application specific data  
-      "connection_string" : "postgresql:host=localhost;port=5432;dbname=todos;user=todosapp", //psql -h localhost -p 5432 -U todosapp todos
+      // application specific data (change if your postgres srv is running on another machine/port) 
+      "connection_string" : "postgresql:host=localhost;port=5432;dbname=todos;user=todosapp", 
       "base_url": "http://localhost:8080",
     },
 }
