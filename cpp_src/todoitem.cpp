@@ -8,13 +8,19 @@
 using cppdb::session;
 
 
-TodoItem::TodoItem(const std::string& title, int order, bool completed)  :
-   m_title(title), m_order(order), m_completed(completed)
-{ }
-
 TodoItem::TodoItem(int uid, const std::string& title, int order, bool completed, const std::string& base_url) :
   m_uid(uid), m_title(title), m_order(order), m_completed(completed), m_base_url(base_url)
 { }
+
+TodoItem::TodoItem(const cppcms::json::value& v) : 
+  m_uid(0)
+{
+  using cppcms::json::bad_value_cast;
+  try { m_title = v.get<std::string>("title"); } 
+   catch(bad_value_cast b){ m_title = ""; BOOSTER_ERROR("Trying to create a TodoItem without a title"); }
+  try { m_order = v.get<int>("order"); } catch(bad_value_cast b){ m_order = 0; }
+  try { m_completed = v.get<bool>("completed"); } catch(bad_value_cast b){ m_completed = false; }
+}
 
 
 
@@ -46,22 +52,29 @@ bool TodoItem::completed() const
   return m_completed;
 }
 
-void TodoItem::patch_from_json(const cppcms::json::value& todo_json)
+void TodoItem::patch_from_json(const cppcms::json::value& todo_json, cppdb::session &sql)
 {
   using cppcms::json::bad_value_cast;
-  try { m_title = todo_json.get<std::string>("title"); } catch(bad_value_cast b){ /* silently ignore title if non-existent */ }
-  try { m_order = todo_json.get<double>("order"); } catch(bad_value_cast b){ /* silently ignore order if non-existent */ }
-  try { m_completed = todo_json.get<bool>("completed"); } catch(bad_value_cast b){ /* silently ignore completed if non-existent */ }
+  try { 
+    m_title = todo_json.get<std::string>("title");     
+  } catch(bad_value_cast b){ /* silently ignore title if non-existent */ }
+  try { 
+    m_order = todo_json.get<int>("order");     
+  } catch(bad_value_cast b){ /* silently ignore order if non-existent */ }
+  try { 
+    m_completed = todo_json.get<bool>("completed");     
+  } catch(bad_value_cast b){ /* silently ignore completed if non-existent */ }
+  save(sql);
 }
 
-bool TodoItem::save(session& sql, const std::string& base_url)
+void TodoItem::save(session& sql, const std::string& base_url)
 {
   m_base_url = base_url;
   save(sql);
 }
 
 
-bool TodoItem::save(session& sql)
+void TodoItem::save(session& sql)
 {
   if(m_uid > 0 ) { // update
     cppdb::statement st = sql  
@@ -74,24 +87,22 @@ bool TodoItem::save(session& sql)
                                               << completed() 
                            /* WHERE */ << m_uid;
    st.exec();
-   return (st.affected() > 0);
   } else { // insert
-   return insert_new(sql);
+   insert_new(sql);
   }
 }
 
-bool TodoItem::insert_new(session &sql)
+void TodoItem::insert_new(session& sql)
 {
   cppdb::statement st = sql << "INSERT INTO todos(title, order_idx, completed) "            
-                                          "VALUES( ? ,       ? ,            ?)"
+                                          "VALUES( ? ,       ? ,            ?) RETURNING uid" /* postgres style */
                                               << title() << order() << completed();
-   st.exec();
-   m_uid = st.last_insert_id();
-   return (st.affected() > 0); 
+   cppdb::result r =  st.row();
+   if(!r.empty()) m_uid = r.get<int>(0);
 }
 
 // unexported helper:
-static TodoItem from_row(cppdb::result &res, const std::string &base_url) 
+TodoItem TodoItem::from_row(cppdb::result &res, const std::string &base_url) 
 {
   int uid = res.get<int>(0);
   std::string title = res.get<std::string>(1);
@@ -111,9 +122,7 @@ TodoItem TodoItem::find_by_id(int uid, const std::string &base_url, session &sql
   if(!res.empty()) {
     return from_row(res, base_url);
   } else {
-    std::cout << "base_url =" <<  base_url << std::endl; 
     BOOSTER_ERROR("Could not find todo item with requested id"); 
-    //return TodoItem(1, "haha", 2, false, base_url);
     throw "Could not find todo item with id: " + std::to_string(uid);
   }
 }
@@ -128,18 +137,16 @@ std::vector< TodoItem > TodoItem::all(const std::string& base_url, session& sql)
   return all_todoItems;
 }
 
-bool TodoItem::delete_all(session& sql)
+void TodoItem::delete_all(session& sql)
 {
   cppdb::statement st = sql << "TRUNCATE todos";
    st.exec();
-  return (st.affected() > 0);
 }
 
-bool TodoItem::delete_by_id(int uid, session& sql)
+void TodoItem::delete_by_id(int uid, session& sql)
 {  
   cppdb::statement st = sql << "DELETE FROM todos * WHERE uid = ?" << uid;
   st.exec();
-  return (st.affected() > 0);
 }
 
 void TodoItem::init_tables(session& sql)

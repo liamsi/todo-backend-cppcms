@@ -5,7 +5,7 @@
          "socket" : "/tmp/todos-fastcgi-socket" 
     },
     "logging" : {
-      "level" : "info",
+      "level" : "debug",
     },
     "todo-backend" : {  
       // application specific data  
