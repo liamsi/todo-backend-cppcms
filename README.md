@@ -14,6 +14,6 @@ user group [meetup](http://www.meetup.com/Meeting-C-Dusseldorf/events/224069170/
 
 ### TODOs 
  - [ ] add a step by step description on howto run/test it locally
- - [ ] link slides (?)
+ - [x] link slides
  - [ ] deploy to some cloud service (heroku/yellow-circle), test 
  - [ ] add this implementation to this [list](https://github.com/TodoBackend/todo-backend-site/blob/master/data/implementations.yaml) and create a pull request
