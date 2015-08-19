@@ -9,8 +9,8 @@ This implementation is fully written in C++ using [cppCMS](http://cppcms.com/) r
 [lighttpd](http://www.lighttpd.net/) and storing data using
 [cppDB](http://cppcms.com/sql/cppdb/) with a [postgresql](http://www.postgresql.org/) backend. 
 (At the time beeing, there is no implementation in C++ on http://www.todobackend.com). 
-It's main purpose is to present some web development example using C++/cppCMS in at a local 
-user group [meetup](http://www.meetup.com/Meeting-C-Dusseldorf/events/224069170/).
+The main purpose of this project is to present some web development example using C++/cppCMS in at a local 
+user group [meetup](http://www.meetup.com/Meeting-C-Dusseldorf/events/224069170/) (here are the [slides](http://slides.com/ismailkhoffi/cppcms-intro/live#/) for that event).
 
 ### TODOs 
  - [ ] add a step by step description on howto run/test it locally
