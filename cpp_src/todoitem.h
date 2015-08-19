@@ -11,8 +11,7 @@
 class TodoItem {
 public:
   // Constructor creates a new TodoItem, use for data coming from the client
-  // (ignore base_url/uid)
-  // don't forget to save it if you want to persist it
+  // don't forget to save it, before returning it back to the client
   TodoItem(const cppcms::json::value &v);
 
   // getter:

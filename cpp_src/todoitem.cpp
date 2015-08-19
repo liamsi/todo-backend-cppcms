@@ -34,6 +34,11 @@ int TodoItem::uid() const { return m_uid; }
 
 std::string TodoItem::title() const { return m_title; }
 
+int TodoItem::order() const { return m_order; }
+
+bool TodoItem::completed() const { return m_completed; }
+
+
 std::string TodoItem::url() const {
   if (m_base_url.empty() || m_uid == 0)
     return "";
@@ -41,9 +46,6 @@ std::string TodoItem::url() const {
     return m_base_url + "/todos/" + std::to_string(m_uid);
 }
 
-int TodoItem::order() const { return m_order; }
-
-bool TodoItem::completed() const { return m_completed; }
 
 void TodoItem::patch_from_json(const cppcms::json::value &todo_json,
                                cppdb::session &sql) {
@@ -64,14 +66,16 @@ void TodoItem::patch_from_json(const cppcms::json::value &todo_json,
   save(sql);
 }
 
+
+/* --------------------------- */
+/* --- DB related methods ---  */
+/* --------------------------- */
+
 void TodoItem::save(session &sql, const std::string &base_url) {
   m_base_url = base_url;
   save(sql);
 }
 
-/* --------------------------- */
-/* --- DB related methods ---  */
-/* --------------------------- */
 
 void TodoItem::save(session &sql) {
   if (m_uid > 0) { // update

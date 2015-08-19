@@ -16,15 +16,18 @@ namespace apps {
 static bool is_schema_created = false;
 
 todos::todos(cppcms::service &srv) : cppcms::application(srv) {
+  // store config data in instance:
   m_conn_str = settings().get<std::string>("todo-backend.connection_string");
   m_base_url = settings().get<std::string>("todo-backend.base_url");
+  
+  // open SQL connection (once and create schema if neccessary
   sql.open(m_conn_str);
   BOOSTER_INFO("Connected to db");
   if (!is_schema_created) { // create schema once
     TodoItem::init_tables(sql);
     is_schema_created = true;
   }
-
+  // how to handle inconming URLs (mapping between instance methods):
   dispatcher().assign("/todos/(\\d+)", &todos::todo, this, 1);
   dispatcher().assign("/todos", &todos::todos_noarg, this);
   mapper().assign("todos", "/todos");
@@ -34,12 +37,12 @@ todos::todos(cppcms::service &srv) : cppcms::application(srv) {
 }
 
 void todos::init() {
-  sql.open(m_conn_str);
+  sql.open(m_conn_str); // open connection each time a URL is dispatched
   cppcms::application::init();
 }
 
 void todos::clear() {
-  sql.close();
+  sql.close(); // close current connection (opened while dispachting)
   cppcms::application::clear();
 }
 
@@ -61,17 +64,16 @@ from_raw_post_data(const std::pair<void *, size_t> &post_data) throw(
   return request;
 }
 
-void todos::todo(std::string num) {
+void todos::todo(std::string s_uid) {
   using cppcms::json::value;
   prepend_cors_headers();
-  int uid = std::stoi(num); // change to atoi if you have a very old compiler or
+  response().set_content_header("application/json");
+  
+  int uid = std::stoi(s_uid); // change to atoi if you have a very old compiler or
                             // don't not want --std=c++11
   if (request().request_method() == "OPTIONS") {
     response().out();
-    return;
-  }
-  response().set_content_header("application/json");
-  if (request().request_method() == "GET") {
+  } else if (request().request_method() == "GET") {
     try {
       TodoItem todo = TodoItem::find_by_id(uid, m_base_url, sql);
       value result = todo;
@@ -80,9 +82,7 @@ void todos::todo(std::string num) {
       response().status(cppcms::http::response::not_found,
                         "TodoItem with requested id does not exist");
       response().out();
-      return;
     }
-
   } else if (request().request_method() == "PATCH") {
     // HTTPs PATCH isn't supposed to be used like this, but we want to follow
     // the specs of www.todo-backend.com
@@ -103,12 +103,10 @@ void todos::todo(std::string num) {
 void todos::todos_noarg() {
   using cppcms::json::value;
   prepend_cors_headers();
+  response().set_content_header("application/json");
   if (request().request_method() == "OPTIONS") {
     response().out();
-    return;
-  }
-  response().set_content_header("application/json");
-  if (request().request_method() == "GET") {
+  } else if (request().request_method() == "GET") {
     try {
       std::vector<TodoItem> all_todos = TodoItem::all(m_base_url, sql);
       value result = all_todos;
@@ -117,7 +115,6 @@ void todos::todos_noarg() {
       response().status(cppcms::http::response::not_found,
                         "TodoItem with requested id does not exist");
       response().out();
-      return;
     }
   } else if (request().request_method() == "POST") {
     value json_todo = from_raw_post_data(request().raw_post_data());
@@ -133,6 +130,7 @@ void todos::todos_noarg() {
     response().out(); // empty []
   }
 }
+
 
 void todos::prepend_cors_headers() {
   response().set_header("Access-Control-Allow-Origin", "*");

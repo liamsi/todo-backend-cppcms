@@ -9,7 +9,7 @@ namespace apps {
 class todos : public cppcms::application {
 public:
   todos(cppcms::service &srv);
-  void todo(std::string num);
+  void todo(std::string s_uid);
   void todos_noarg();
   virtual void init();
   virtual void clear();
@@ -20,7 +20,7 @@ protected:
 private:
   std::string m_conn_str;
   std::string m_base_url;
-
+   
   void prepend_cors_headers();
 };
 
