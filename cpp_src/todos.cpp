@@ -26,10 +26,9 @@ todos::todos(cppcms::service &srv) : cppcms::application(srv) {
   }
 
   dispatcher().assign("/todos/(\\d+)", &todos::todo, this, 1);
-  mapper().assign("todo", "/todos/{1}");
-
   dispatcher().assign("/todos", &todos::todos_noarg, this);
   mapper().assign("todos", "/todos");
+  mapper().assign("todos", "/todos/{1}");
 
   mapper().root("/todos");
 }
